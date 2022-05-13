@@ -1,0 +1,15 @@
+/sova-tts-engine/datasets/
+/additional_packages/
+/sova-tts-engine/output_dir/
+/sova-tts-engine/output_dir_archive/
+/sova-tts-engine/log_dir/
+/sova-tts-engine/.git/
+/waveglow/.git/
+/sova-tts-vocoder/
+/.idea/
+/emotion_voices/
+/tts_output/
+
+/src/
+/sova-tts-engine/
+/waveglow/
