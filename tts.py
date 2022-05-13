@@ -1,4 +1,5 @@
 import argparse
+import csv
 import librosa
 import numpy
 import os
@@ -11,11 +12,8 @@ from yaml.loader import SafeLoader
 
 path_to_tacotron = "/home/max/TTS/pycharm-sova/sova-tts-engine"
 path_to_waveglow = "/home/max/TTS/pycharm-sova/waveglow"
-path_to_waveglow_tacotron2 = "/home/max/TTS/pycharm-sova/waveglow/tacotron2/"
 
-#sys.path.insert(0, path_to_waveglow_tacotron2)
 sys.path.insert(0, path_to_waveglow)
-#from denoiser import Denoiser
 MAX_WAV_VALUE = 32768.0  # value from mel2samp.py in waveglow
 
 sys.path.insert(0, path_to_tacotron)
@@ -39,6 +37,10 @@ def get_text(text, mask_stress, mask_phonemes, text_handler):
 def get_text_and_names_from_csv(csv_path):
     names = []
     texts = []
+    for line in open(csv_path, 'r'):
+        line = line.split('|')
+        texts.append(line[1])
+        names.append(line[0])
     return names, texts
 
 
@@ -152,6 +154,6 @@ if __name__ == "__main__":
             audio = audio.cpu().numpy()
             audio = audio.astype('int16')
             audio_path = os.path.join(
-                output_folder, "{}_synthesis.wav".format(input_name))
+                output_folder, "{}".format(input_name))
             write(audio_path, sampling_rate, audio)
             print(audio_path)
