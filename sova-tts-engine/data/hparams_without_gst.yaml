@@ -10,7 +10,7 @@ output_dir: /home/max/TTS/pycharm-sova/sova-tts-engine/output_dir
 log_dir: /home/max/TTS/pycharm-sova/sova-tts-engine/log_dir
 
 #checkpoint: /home/max/TTS/pycharm-sova/tacotron2/outdir/tacotron2_statedict.pt
-checkpoint: /home/max/TTS/pycharm-sova/sova-tts-engine/output_dir/trained_without_gst.pt
+checkpoint: /home/max/TTS/pycharm-sova/sova-tts-engine/output_dir/trained_with_gst
 warm_start: true
 
 seed: 1234
