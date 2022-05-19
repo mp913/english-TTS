@@ -56,6 +56,8 @@ if __name__ == "__main__":
         use_gst = data['use_gst']
         if use_gst:
             emotion_wav = data['emotion_wav']
+        else:
+            emotion_wav = ""
         output_folder = data['output_folder']
 
         waveglow_path = data['waveglow_path']
@@ -81,7 +83,10 @@ if __name__ == "__main__":
     # Work cycle
     with torch.no_grad():
         for input_sentence, input_name in zip(texts, names):
-            audio = synthesizer.synthesize(input_sentence, input_name)
+            if use_ssml:
+                audio = synthesizer.synthesize_ssml(input_sentence)
+            else:
+                audio = synthesizer.synthesize(input_sentence)
             audio_path = os.path.join(output_folder, "{}".format(input_name))
             write(audio_path, sampling_rate, audio)
             print(audio_path)

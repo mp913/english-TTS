@@ -1,10 +1,15 @@
+import numpy as np
 import os
 import sys
 import torch
 import tps
 
+
 path_to_tacotron = "/home/max/TTS/pycharm-sova/sova-tts-engine"
 path_to_waveglow = "/home/max/TTS/pycharm-sova/waveglow"
+
+from tps.modules.ssml.parser import parse_ssml_text
+from ssml_controller import SSMLException, ssml_factory
 
 sys.path.insert(0, path_to_waveglow)
 MAX_WAV_VALUE = 32768.0  # value from mel2samp.py in waveglow
@@ -74,7 +79,7 @@ class Synthesizer:
         text_tensor = torch.IntTensor(text_vector)
         return text_tensor
 
-    def synthesize(self, input_sentence, input_name):
+    def synthesize(self, input_sentence):
         processed_sentence = self.get_text(input_sentence, self.mask_stress, self.mask_phonemes, self.text_handler)
         processed_sentence = torch.unsqueeze(processed_sentence, 0)
         processed_sentence = processed_sentence.cuda()
@@ -93,3 +98,21 @@ class Synthesizer:
         audio = audio.cpu().numpy()
         audio = audio.astype('int16')
         return audio
+
+    def synthesize_ssml(self, ssml_text):
+        try:
+            ssml_elements = parse_ssml_text(ssml_text)
+        except SSMLException as e:
+            raise e
+        except Exception as e:
+            raise RuntimeError("Failed to parse ssml")
+        audio_segments = []
+        for element in ssml_elements:
+            ssml_element = ssml_factory(element)
+            content, is_text = ssml_element.get_content()
+            if is_text:
+                content = self.synthesize(content)
+            audio = ssml_element.postprocess_content(content)
+            audio_segments.append(audio)
+        merged_audio = np.concatenate(audio_segments, axis=0).astype(np.int16)
+        return merged_audio
