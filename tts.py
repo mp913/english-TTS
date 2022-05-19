@@ -4,6 +4,7 @@ from scipy.io.wavfile import write
 import torch
 import yaml
 from yaml.loader import SafeLoader
+import re
 
 import synthesizer
 
@@ -16,6 +17,20 @@ def get_text_and_names_from_csv(csv_path):
         texts.append(line[1])
         names.append(line[0])
     return names, texts
+
+
+def preprocess_explicit_language(input_sentence, explicit_dictionary):
+    words_to_change = set()
+    input_sentence_processed = re.sub('[.,!@#$?]', '', input_sentence)
+    input_sentence_processed = input_sentence_processed.split(' ')
+    for word in input_sentence_processed:
+        if word.lower() in explicit_dictionary:
+            words_to_change.add(word)
+
+    for word in words_to_change:
+        input_sentence = input_sentence.replace(word, '<say-as interpret-as="expletive">' + word + '</say-as>')
+    input_sentence = '<speak>' + input_sentence + '</speak>'
+    return input_sentence
 
 
 if __name__ == "__main__":
@@ -58,13 +73,24 @@ if __name__ == "__main__":
             emotion_wav = data['emotion_wav']
         else:
             emotion_wav = ""
-        output_folder = data['output_folder']
 
         waveglow_path = data['waveglow_path']
         is_fp16 = data['is_fp16']
         sigma = data['sigma']
         sampling_rate = data['sampling_rate']
 
+        output_folder = data['output_folder']
+        explicit_filter = data['explicit_filter']
+        if use_ssml:
+            explicit_filter = False
+        if explicit_filter:
+            use_ssml = True
+            explicit_dictionary = []
+            explicit_dictionary_file = open(data['explicit_dictionary'], 'r')
+            for line in explicit_dictionary_file:
+                explicit_dictionary.append(line.lower().replace('\n', ''))
+        else:
+            explicit_dictionary = []
         print("Config file loaded successfully")
 
     mask_stress = False
@@ -83,6 +109,8 @@ if __name__ == "__main__":
     # Work cycle
     with torch.no_grad():
         for input_sentence, input_name in zip(texts, names):
+            if explicit_filter:
+                input_sentence = preprocess_explicit_language(input_sentence, explicit_dictionary)
             if use_ssml:
                 audio = synthesizer.synthesize_ssml(input_sentence)
             else:
