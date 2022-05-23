@@ -67,7 +67,7 @@ if __name__ == "__main__":
     with open(config_path) as config_file:
         data = yaml.load(config_file, Loader=SafeLoader)
         hparams_path = data['hparams']
-        checkpoint_path = data['checkpoint']
+        checkpoint_path = data['tacotron_path']
         use_gst = data['use_gst']
         if use_gst:
             emotion_wav = data['emotion_wav']
@@ -75,8 +75,6 @@ if __name__ == "__main__":
             emotion_wav = ""
 
         waveglow_path = data['waveglow_path']
-        is_fp16 = data['is_fp16']
-        sigma = data['sigma']
         sampling_rate = data['sampling_rate']
 
         output_folder = data['output_folder']
@@ -97,9 +95,7 @@ if __name__ == "__main__":
     mask_phonemes = True
 
     synthesizer = synthesizer.Synthesizer(waveglow_path=waveglow_path,
-                                          is_fp16=is_fp16,
                                           sampling_rate=sampling_rate,
-                                          sigma=sigma,
                                           hparams_path=hparams_path,
                                           checkpoint_path=checkpoint_path,
                                           use_gst=use_gst,

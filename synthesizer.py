@@ -21,20 +21,13 @@ from utils.data_utils import TextMelLoader
 
 
 class Synthesizer:
-    def __init__(self, waveglow_path, is_fp16, sampling_rate, sigma, hparams_path, checkpoint_path, use_gst, emotion_wav, mask_stress,
+    def __init__(self, waveglow_path, sampling_rate, hparams_path, checkpoint_path, use_gst, emotion_wav, mask_stress,
                  mask_phonemes):
         # Waveglow initialization
         self.waveglow = torch.load(waveglow_path)['model']
         self.waveglow = self.waveglow.remove_weightnorm(self.waveglow)
         self.waveglow.cuda().eval()
-
-        self.is_fp16 = is_fp16
         self.sampling_rate = sampling_rate
-        self.sigma = sigma
-
-        if is_fp16:
-            from apex import amp
-            self.waveglow, _ = amp.initialize(self.waveglow, [], opt_level="O3")
 
         print("Waveglow initialized")
 
@@ -59,8 +52,8 @@ class Synthesizer:
         self.use_gst = use_gst
         if self.use_gst:
             test_csv = "/home/max/TTS/pycharm-sova/inference_gst_test.csv"
-            self.text_loader = TextMelLoader(self.text_handler, test_csv, hparams)
-            self.ref_mel = torch.unsqueeze(self.text_loader.get_mel(emotion_wav), 0).cuda()
+            text_loader = TextMelLoader(self.text_handler, test_csv, hparams)
+            self.ref_mel = torch.unsqueeze(text_loader.get_mel(emotion_wav), 0).cuda()
 
         self.mask_stress = mask_stress
         self.mask_phonemes = mask_phonemes
@@ -91,8 +84,7 @@ class Synthesizer:
         mel = mel_outputs_postnet[0]
         mel = torch.autograd.Variable(mel.cuda())
         mel = torch.unsqueeze(mel, 0)
-        mel = mel.half() if self.is_fp16 else mel
-        audio = self.waveglow.infer(mel, sigma=self.sigma)
+        audio = self.waveglow.infer(mel)
         audio = audio * MAX_WAV_VALUE
         audio = audio.squeeze()
         audio = audio.cpu().numpy()
@@ -109,6 +101,7 @@ class Synthesizer:
         audio_segments = []
         for element in ssml_elements:
             ssml_element = ssml_factory(element)
+            ssml_element.sample_rate = self.sampling_rate
             content, is_text = ssml_element.get_content()
             if is_text:
                 content = self.synthesize(content)

@@ -1,13 +1,22 @@
-checkpoint: /home/max/TTS/pycharm-sova/sova-tts-engine/output_dir/checkpoint_49000
+# tacatron2 parameters
+
+#tacotron_path: /home/max/TTS/pycharm-sova/sova-tts-engine/output_dir/checkpoint_49000
+tacotron_path: /home/max/TTS/pycharm-sova/sova-tts-engine/output_dir/trained_with_gst2
+#tacotron_path: /home/max/TTS/pycharm-sova/sova-tts-engine/output_dir/trained_without_gst
+#tacotron_path: /home/max/TTS/pycharm-sova/sova-tts-engine/output_dir/tacotron2_statedict.pt
 hparams: /home/max/TTS/pycharm-sova/sova-tts-engine/data/hparams.yaml
+#hparams: /home/max/TTS/pycharm-sova/sova-tts-engine/data/hparams_without_gst.yaml
 use_gst: True
-emotion_wav: /home/max/TTS/pycharm-sova/emotion_voices/happy.wav
-output_folder: ./tts_output
+emotion_wav: /home/max/TTS/pycharm-sova/emotion_voices/neutral.wav
+
 
 # waveglow parameters
 
 waveglow_path: /home/max/TTS/pycharm-sova/sova-tts-vocoder/checkpoints/waveglow_256channels_universal_v5.pt
-sigma: 1.0
 sampling_rate: 22050
-denoiser_strength: 0.0
-is_fp16: False
+
+# Additional parameters 
+
+explicit_filter: False # for non SSML text only
+explicit_dictionary: /home/max/TTS/pycharm-sova/explicit_dictionary.txt
+output_folder: ./tts_output
