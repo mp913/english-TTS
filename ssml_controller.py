@@ -1,4 +1,5 @@
 import abc
+import pydub
 from pysndfx import AudioEffectsChain
 import numpy as np
 from tps.modules.ssml.elements import Text, Pause, SayAs
@@ -14,7 +15,7 @@ class SSMLElement(abc.ABC):
     sample_rate = 22050
     max_wav_value = 32768.0
 
-    def __init__(self, pitch=1.0, rate=1.0, volume=1.0):
+    def __init__(self, pitch=1.0, rate=1.0, volume=0.0):
         self.pitch = pitch
         self.rate = rate
         self.volume = volume
@@ -24,16 +25,27 @@ class SSMLElement(abc.ABC):
         pass
 
     def postprocess_content(self, audio):
-        audio = audio / SSMLElement.max_wav_value
         audio = self.change_pitch(audio)
+        audio = audio / SSMLElement.max_wav_value
         audio = self.change_rate(audio)
         audio = self.change_volume(audio)
         audio = audio * SSMLElement.max_wav_value
         return audio
 
     def change_pitch(self, audio):
-        fx = (AudioEffectsChain().pitch(self.pitch))
-        audio = fx(audio, sample_in=self.sample_rate)
+        audio = audio.astype('int16')
+        sound_pydub = pydub.AudioSegment(
+            audio.tobytes(),
+            frame_rate=self.sample_rate,
+            sample_width=audio.dtype.itemsize,
+            channels=1
+        )
+        octaves = self.pitch - 1
+        new_sampling_rate = int(sound_pydub.frame_rate * (2.0 ** octaves))
+        pitch_sound = sound_pydub._spawn(sound_pydub.raw_data, overrides={'frame_rate': new_sampling_rate})
+        pitch_sound = pitch_sound.set_frame_rate(self.sample_rate)
+        audio = np.array(pitch_sound.get_array_of_samples()).astype('float')
+
         return audio
 
     def change_rate(self, audio):
@@ -42,7 +54,7 @@ class SSMLElement(abc.ABC):
         return audio
 
     def change_volume(self, audio):
-        audio = audio * self.volume
+        audio = audio * (10 ** (self.volume / 20))
         audio = np.clip(audio, -1.0, 1.0)
         return audio
 
@@ -61,22 +73,6 @@ class SSMLBreak(SSMLElement):
 
     def postprocess_content(self, audio):
         return audio
-
-    @staticmethod
-    def parse_duration_string(duration: str):
-        if duration.endswith('ms'):
-            try:
-                duration_in_sec = float(duration[:-2]) / 1000
-                return duration_in_sec
-            except Exception as e:
-                SSMLException(f'Invalid break duration: {duration}')
-        if duration.endswith('s'):
-            try:
-                duration_in_sec = float(duration[:-1])
-                return duration_in_sec
-            except Exception as e:
-                SSMLException(f'Invalid break duration: {duration}')
-        raise SSMLException(f'Invalid break duration: {duration}. Duration parameter must end with \'s\' or \'ms\'')
 
 
 class SSMLSayAs(SSMLElement):
@@ -97,13 +93,13 @@ class SSMLSayAs(SSMLElement):
             noise[i] = limit * (1 - 2 * abs(1 - 2 * (float(i % fpp) / fpp)))
         return noise, False
 
-    symbol_duration = 0.05
+    symbol_duration = 0.1
     interpret_as_mapper = {
         'characters': interpret_as_characters.__func__,
         'expletive': interpret_as_expletive.__func__,
     }
 
-    def __init__(self, interpret_as, content, pitch=1.0, rate=1.0, volume=1.0):
+    def __init__(self, interpret_as, content, pitch=1.0, rate=1.0, volume=0.0):
         super().__init__(pitch=pitch, rate=rate, volume=volume)
         self.interpreter_function = SSMLSayAs.interpret_as_mapper.get(interpret_as, None)
         if self.interpreter_function is None:
@@ -116,7 +112,7 @@ class SSMLSayAs(SSMLElement):
 
 
 class SSMLText(SSMLElement):
-    def __init__(self, text, pitch=1.0, rate=1.0, volume=1.0):
+    def __init__(self, text, pitch=1.0, rate=1.0, volume=0.0):
         super().__init__(pitch=pitch, rate=rate, volume=volume)
         self.text = text
 
