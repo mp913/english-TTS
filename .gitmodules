@@ -1,0 +1,9 @@
+[submodule "modules/sova-tts-engine"]
+	path = modules/sova-tts-engine
+	url = https://github.com/mp913/sova-tts-engine
+[submodule "modules/sova-tts-tps"]
+	path = modules/sova-tts-tps
+	url = https://github.com/mp913/sova-tts-tps
+[submodule "modules/waveglow"]
+	path = modules/waveglow
+	url = https://github.com/mp913/waveglow
